@@ -2,12 +2,12 @@
 #include<stdlib.h>
 #include<string.h>
 #include<time.h>
+#include<ctype.h>
 #define max 30
 
 typedef struct tm tm;
 
 typedef struct ticketReparacao{
-    int tipo;
     int numAtend;
     tm tiraTick;
     int balcao;
@@ -19,7 +19,6 @@ typedef struct ticketReparacao{
 }reparacao;
 
 typedef struct ticketEntrega{
-    int tipo;
     int numAtend;
     tm tiraTick;
     int balcao;
@@ -30,20 +29,6 @@ typedef struct ticketEntrega{
     int espera;
 }entrega;
 
-//typedef struct ticketGeral{
-//    int tipo;
-//    int numAtend;
-//    entrega;
-//    reparacao;
-//}ticketGeral;
-
-void getsn(char str[], int len)
-{
-  fgets(str, len, stdin);
-  str[strcspn (str,"\n\r")] = '\0';
-  fflush(stdin);
-}
-
 tm*tempo(){
     time_t rawtime;
     tm*info;
@@ -52,12 +37,16 @@ tm*tempo(){
     return info;
 }
 
+int disponivel(){
+    reparacao pri;
+    pri.tiraTick = *tempo();
+    return (pri.tiraTick.tm_hour<22 && pri.tiraTick.tm_hour>= 8);
+};
 
 void criarTicketReparacao(reparacao repar[],int*n){
     
     
     if(*n<max){
-        srand(time(0));
         int rand_num = (rand() % (3 - 1 + 1)) + 1;
         repar[*n].balcao=rand_num;
         
@@ -75,9 +64,6 @@ void criarTicketReparacao(reparacao repar[],int*n){
         printf("   ****Ticket Reparacao****\n");
         printf("----------------------------\n");
         printf("Numero de Atendimento  :  %d\n",repar[*n].numAtend);
-        
-        repar[*n].tipo = 1;
-        
         printf("Data e hora : |%s|\n",tmp1);
         printf("Balcao      : %d\n", repar[*n].balcao);
 
@@ -86,10 +72,10 @@ void criarTicketReparacao(reparacao repar[],int*n){
     else
         printf("Atingiu o limite!\n");
 }
+
 void criarTicketEntrega(entrega entre[],int*n){
     
     if(*n<max){
-        srand(time(0));
         int rand_num = (rand() % (4 - 1 + 1)) + 1;
     
         entre[*n].balcao=rand_num;
@@ -108,8 +94,6 @@ void criarTicketEntrega(entrega entre[],int*n){
         printf("   ****Ticket Entrega****\n");
         printf("----------------------------\n");
         printf("Numero de Atendimento  :  %d\n",entre[*n].numAtend);
-        entre[*n].tipo =0;
-        
         printf("Data e hora : |%s|\n",tmp1);
         printf("Balcao      : %d\n", entre[*n].balcao);
 
@@ -118,7 +102,6 @@ void criarTicketEntrega(entrega entre[],int*n){
     else
         printf("Atingiu o limite!\n");
 }
-
 
 void atenderTicketReparacao(reparacao repar[],int*atend,int R){
     
@@ -155,6 +138,7 @@ void atenderTicketReparacao(reparacao repar[],int*atend,int R){
         
         
         (*atend)++;
+        fflush(stdin);
     }
 }
 
@@ -175,9 +159,11 @@ void atenderTicketEntrega(entrega entre[],int*atend, int E){//preenche as inform
         fgets(entre[i].condicoes,max,stdin);
         fflush(stdin);
         do{
-        printf("Valor a pagar            :   ");
-        scanf(" %f%*c", &entre[i].valor);
-        fflush(stdin);
+                
+            printf("Valor a pagar            :   ");
+            scanf(" %f*c", &entre[i].valor);
+            
+            fflush(stdin);
         }while(entre[i].valor<0);
         
         char tmp2[30];
@@ -191,12 +177,10 @@ void atenderTicketEntrega(entrega entre[],int*atend, int E){//preenche as inform
 
         
         (*atend)++;
+        fflush(stdin);
     }
+    
 }
-
-
-
-
 
 int tipoDeTick(){ //escolher o tipo de ticket, reparacao ou entrega
       int ch;
@@ -213,10 +197,10 @@ int tipoDeTick(){ //escolher o tipo de ticket, reparacao ou entrega
       default:
         printf("Opcao mal escolhida!\n");
     } 
+    fflush(stdin);
   } while(ch != 1 && ch !=2);
     return ch;
 }
-
 
 //LISTAR TODOS OS TICKETS
 void listarTicketsEntrega(entrega entre[],int E){//fazer isto para dar para todos os tickets
@@ -279,8 +263,7 @@ void listarTicketsReparcao(reparacao repar[],int R){//fazer isto para dar para t
     }
 }
                         
-
-  //listar cada ticket individualmente                      
+//listar cada ticket individualmente                      
  void listarTicketReparcao(reparacao repar[],int R){//fazer isto para dar para todos os tickets
     fflush(stdin);
     int i;
@@ -353,12 +336,119 @@ void listarTicketEntrega(entrega entre[],int E){//fazer isto para dar para todos
         }
     }
 }
+                                               
+void procurarData(int *dia, int *mes, int *ano){
+
+    printf("Insira uma data para pesquisar Tickets");
+    printf("\nDia->");scanf(" %d",dia);
+    printf("Mes->");scanf(" %d",mes);
+    printf("Ano->");scanf(" %d",ano);
+    
+    (*mes)=*mes-1;//valores de meses sao de 0 a 11
+    (*ano)=*ano-1900;//valores de ano contam a partir de 1900
+}
+
+void listarPorData(entrega entre[],reparacao repar[],int nE,int nR){
+    int i;
+    
+    int dia=0, mes=0,ano=0;
+    procurarData(&dia,&mes,&ano);
+    
+    for(i=0;i<nE;i++){
+        if(entre[i].atendimento.tm_mday==dia && entre[i].atendimento.tm_mon==mes && entre[i].atendimento.tm_year==ano){
+                printf("****************************************");
+                printf("\n         TICKET   ENTREGA                \n");
+                printf("****************************************\n");
+                printf("Numero atendimento    : %d\n", entre[i].numAtend);
+                printf("Balcao                : %d\n", entre[i].balcao);
+                
+                char tmp1[30];
+                strftime(tmp1,30,"%c",&entre[i].tiraTick);
+                printf("Bilhete retirado a    : |%s|\n",tmp1);
+                
+                char tmp2[30];
+                strftime(tmp2,30,"%c",&entre[i].atendimento);
+                printf("Hora de Atendimento   : |%s|\n",tmp2);
+                printf("Condicoes             : %s", entre[i].condicoes);
+                printf("valor                 : %.2f EUR", entre[i].valor);
+                
+                int h,m,s;
+                h=(entre[i].espera/3600);
+                m=(entre[i].espera-(3600*h))/60;
+                s=(entre[i].espera-(3600*h)-(m*60));
+                
+                printf("\nTempo de espera       : %02dH:%02dM:%02dS", h,m,s);
+                printf("\n**************\n");
+            }
+        }
+    for(i=0;i<nR;i++){
+        if(repar[i].atendimento.tm_mday==dia && repar[i].atendimento.tm_mon==mes && repar[i].atendimento.tm_year==ano){
+                printf("****************************************");
+                printf("\n          TICKET   REPARACAO               \n");
+                printf("****************************************\n");
+                printf("Numero atendimento    : %d\n", repar[i].numAtend);
+                printf("Balcao                : %d\n", repar[i].balcao);
+                
+                char tmp1[30];
+                strftime(tmp1,30,"%c",&repar[i].tiraTick);
+                printf("Bilhete retirado a    : |%s|\n",tmp1);
+                
+                char tmp2[30];
+                strftime(tmp2,30,"%c",&repar[i].atendimento);
+                printf("Hora de Atendimento   : |%s|\n",tmp2);
+                printf("Equipamento           :  %s", repar[i].equipamento);
+                printf("Observacoes           :  %s", repar[i].observacoes);
+                
+                int h,m,s;
+                h=(repar[i].espera/3600);
+                m=(repar[i].espera-(3600*h))/60;
+                s=(repar[i].espera-(3600*h)-(m*60));
+                
+                printf("Tempo de espera       : %02dH:%02dM:%02dS", h,m,s);
+                printf("\n_______________________________________\n");
+            }
+        }
+}
                         
-  
-  
+ void valorTotalPorData(entrega entre[],int n){
+
+    int i;
+    int dia=0,mes=0,ano=0;
+    procurarData(&dia,&mes,&ano);
+    
+    float total=0;
+    for(i=0;i<n;i++){
+        if(entre[i].atendimento.tm_mday==dia && entre[i].atendimento.tm_mon==mes && entre[i].atendimento.tm_year==ano)
+            total+=entre[i].valor;
+    }
+    int mesreal=mes+1;
+    int anoreal=ano+1900;
+    printf("Valor Total no dia %d/%d/%d ->>>%.2f EUR",dia,mesreal,anoreal,total);
+} 
+                
+void ticketsAtendPorData(entrega entre[],reparacao repar[],int nE,int nR){
+    int dia=0,mes=0,ano=0;
+    int i;
+    int totalE=0,totalR=0,total=0;
+    procurarData(&dia,&mes,&ano);
+    for(i=0;i<nE;i++){
+        if(entre[i].atendimento.tm_mday==dia && entre[i].atendimento.tm_mon==mes && entre[i].atendimento.tm_year==ano)
+            totalE+=1;
+    }
+    for(i=0;i<nR;i++){
+        if(repar[i].atendimento.tm_mday==dia && repar[i].atendimento.tm_mon==mes && repar[i].atendimento.tm_year==ano)
+            totalR+=1;
+    }
+    int mesreal=mes+1;
+    int anoreal=ano+1900;
+    total=totalR+totalE;
+    printf("\n\nTickets atendidos no dia %d/%d/%d ->>> %d\n",dia,mesreal,anoreal,total);
+    printf("Numero de Tickets Entrega-> %d\nNumero de Tickets Reparacaoo-> %d\n\n",totalE,totalR);
+}                        
+                                                               
 void valorMedio(entrega entre[], int n){//valor medio das entregas
     int i;
-    int total=0;
+    float total=0;
     float media=0;
     
     for(i=0;i<n;i++){
@@ -375,15 +465,14 @@ void valorMedio(entrega entre[], int n){//valor medio das entregas
     }
 } 
   
-int valorTotal(entrega entre[], int n){//valor total das entregas
+float valorTotal(entrega entre[], int n){//valor total das entregas
     int i;
-    int total=0;
+    float total=0;
     for(i=0;i<n;i++){
         total+=entre[i].valor;
     }
     return total;
 } 
-
 
 void mediaEspera(entrega entre[],reparacao repar[], int nR,int nE){//MEDIA DE ESPERA
     int i;
@@ -421,113 +510,218 @@ void mediaEspera(entrega entre[],reparacao repar[], int nR,int nE){//MEDIA DE ES
         }
 }
     
+void produtividadeBalcao(reparacao repar[],entrega entre[], int nR,int nE){
+    int i=0;
+    int countb1=0,countb2=0,countb3=0,countb4=0;
+    int maior=0,balcao=0;
     
+    for(i=0;i<nR;i++){
+        if(repar[i].balcao==1)
+            countb1++;
+        if(repar[i].balcao==2)
+            countb2++;
+        if(repar[i].balcao==3)
+            countb3++;
+    }
+    for(i=0;i<nE;i++){
+    if(entre[i].balcao==1)
+        countb1++;
+    if(entre[i].balcao==2)
+        countb2++;
+    if(entre[i].balcao==3)
+        countb3++;
+    if(entre[i].balcao==4)
+        countb4++;
+    }
+    
+    int a[4]={countb1,countb2,countb3,countb4};
+    int menor=a[0];
+    
+    for(i=0;i<4;i++){
+        if(a[i]>maior){
+            maior=a[i];
+            balcao=i+1;
+        }
+    }
+    printf("O balcao mais produtivo foi o %d, de onde foram retirados %d Tickets\n",balcao,maior);
+    
+    for(i=0;i<4;i++){
+        if(a[i]<menor){
+            menor=a[i];
+            balcao=i+1;
+        }
+    }
+    printf("O balcao menos produtivo foi o %d, de onde foram retirados %d Tickets\n",balcao,menor);
+}
+    
+void subMenu(reparacao repar[],entrega entre[],int atendE,int atendR){
+    int ch;
+    char character;
+    do{
+        printf("\n==================================");
+        printf("  \n     Sub Menu ");
+        printf("\n==================================");
+        printf("\n »Tickets por Data(1)");
+        printf("\n »Produtividade dos Balcoes(2)");
+        printf("\n »Valor Total entregue por Data(3)");
+        printf("\n »Tickets atendidos por Data(4)");
+        printf("\n »Sair(0) \n");
+        printf("Escolha\n->");
+        scanf(" %c",&character);
+        ch = (int) character;//transforma o valor do caracter no seu equivalente decimal
+        if(ch>=48 && ch<=57){//manter o range aceitavel entre 48 e 57(0 a 9 em valor de caracter)
+                ch=ch-48;//transmutar o o range para 0-9
+                
+                fflush(stdin);
+                switch(ch){
+                    case 1:
+                        listarPorData(entre,repar,atendE,atendR);
+                        break;
+                    case 2://boom
+                        produtividadeBalcao(repar,entre,atendR,atendE);
+                        break;
+                    case 3://boom
+                         valorTotalPorData(entre,atendE);
+                        break;
+                    case 4://boom
+                         ticketsAtendPorData(entre,repar,atendE,atendR);
+                        break;
+                    
+                    case 0:
+                        printf("Fim do Sub Menu");
+                        break;
+                    default:
+                        printf("Inserir escolha valida !\n\n\n\n");
+                }   
+        }
+        else
+            ch=100;
+          fflush(stdin);
 
+     }while(ch!=0);
+}
 
+void menu(){
+    printf("\n==================================");
+    printf("\n");
+    printf("  \n     Sistema de atendimento ");
+    printf("\n");
+    printf("\n==================================");
 
-
-
+    printf("\n         Gerar Ticket(1)");
+    printf("\n           Atender(2) ");
+    printf("\n     Listar Todos os Tickets(3)");
+    printf("\n     Listar Ticket Individual(4) ");
+    printf("\n      Media de Valor Entregue(5)");
+    printf("\n       Valor Total Entregue(6)");
+    printf("\n         Media de espera(7)");
+    printf("\n           Sub Menu(8)");
+    printf("\n             Sair(0) \n");
+    printf("Escolha\n->");
+}
 
 int main(){
-    int ch,tipo,total=0;
+    srand(time(0));
+    int tipo;
     int numR=0,numE=0,countE=0,countR=0,atendR=0,atendE=0;
-    
+    char character;
+    float total;
+    int ch;
     
     reparacao repar[max];
     entrega entre[max];
     do{
-        printf("\n==================================");
-        printf("\n");
-        printf("  \n     Sistema de atendimento ");
-        printf("\n");
-        printf("\n==================================");
+        menu();
+        scanf(" %c",&character);
+        ch = (int) character;//transforma o valor do caracter no seu equivalente decimal
+        if(ch>=48 && ch<=57){//manter o range aceitavel entre 48 e 57(0 a 9 em valor de caracter)
+                ch=ch-48;//transmutar o o range para 0-9
+            switch (ch){
+                    case 1:
+                        if(disponivel()){
+                            printf("\nESTADO: ABERTO\n\n");
+                            tipo=tipoDeTick();
+                            if(tipo==1){
+                                fflush(stdin);
+                                criarTicketReparacao(repar,&numR);
+                                countR++;
+                            }
+                            if(tipo==2){
+                                fflush(stdin);
+                                criarTicketEntrega(entre,&numE);
+                                countE++;
+                            }
+                        }
+                        else{
+                            printf("\n      Estado: FECHADO");
+                            printf("\nApenas aberto entre as 8h e as 22h \n\n");
+                        }
+                        break;
+                    case 2://atender
+                        fflush(stdin);
+                        tipo=tipoDeTick();
+                        if(tipo==1){
+                            fflush(stdin);
+                            atenderTicketReparacao(repar,&atendR,countR);
+                        }
+                        if(tipo==2){
+                            fflush(stdin);
+                            atenderTicketEntrega(entre,&atendE,countE);    
+                        }
 
-        printf("\n         Gerar Ticket(1)");
-        printf("\n           Atender(2) ");
-        printf("\n     Listar Todos os Tickets(3)");
-        printf("\n     Listar Ticket Individual(4) ");
-        printf("\n      Media de Valor Entregue(5)");
-        printf("\n       Valor Total Entregue(6)");
-        printf("\n         Media de espera(7)");
-        printf("\n             Sair(0) \n");
-        printf("Escolha\n->");
-        scanf("%d",&ch);
-      switch (ch){
-            case 1:
-                tipo=tipoDeTick();
-                if(tipo==1){
-                    fflush(stdin);
-                    criarTicketReparacao(repar,&numR);
-                    countR++;
+                        break;
+                    case 3://listar
+                        fflush(stdin);
+                            printf("\n   ___________________________________");
+                            printf("     \n\n           ***REPARACAO***\n");
+                            printf("\n   ___________________________________");
+                            fflush(stdin);
+                            listarTicketsReparcao(repar,atendR);
+                            printf("\n   ___________________________________");
+                            printf("        \n\n          ***ENTREGA***\n");
+                            printf("\n   ___________________________________");
+                            fflush(stdin);
+                            listarTicketsEntrega(entre,atendE);
+                        break;
+                    case 4:
+                        fflush(stdin);
+                        tipo=tipoDeTick();
+                        if(tipo==1){
+                            fflush(stdin);
+                            listarTicketReparcao(repar,atendR);
+                        }
+                        if(tipo==2){
+                            fflush(stdin);
+                            listarTicketEntrega(entre,atendE);
+                        }
+                        break;
+                    case 5://sdasdasdas
+                        
+                        valorMedio(entre,atendE);
+        //                printf("Valor médio das entregas  :  %02f EUR",media);
+                        break;
+                    case 6:
+                        total=valorTotal(entre,atendE);
+                        printf("Valor total das entregas  :  %.2f EUR",total);
+                        break;
+                    case 7://boom
+                        mediaEspera(entre,repar,atendR,atendE);
+                        break;
+                    case 8:
+                        subMenu(repar,entre,atendE,atendR);
+                        break;
+                    case 0:
+                        printf("\n\n        A sair...");
+                        exit(0);
+                        break;
+                    default:
+                        printf("Inserir escolha valida !\n\n\n\n");
                 }
-                if(tipo==2){
-                    fflush(stdin);
-                    criarTicketEntrega(entre,&numE);
-                    countE++;
-                }
-                break;
-            case 2://atender
-                fflush(stdin);
-                tipo=tipoDeTick();
-                if(tipo==1){
-                    fflush(stdin);
-                    atenderTicketReparacao(repar,&atendR,countR);
-                }
-                if(tipo==2){
-                    fflush(stdin);
-                    atenderTicketEntrega(entre,&atendE,countE);    
-                }
-
-                break;
-            case 3://listar
-                fflush(stdin);
-                    printf("\n   ___________________________________");
-                    printf("     \n\n           ***REPARACAO***\n");
-                    printf("\n   ___________________________________");
-                    fflush(stdin);
-                    listarTicketsReparcao(repar,atendR);
-                    printf("\n   ___________________________________");
-                    printf("        \n\n          ***ENTREGA***\n");
-                    printf("\n   ___________________________________");
-                    fflush(stdin);
-                    listarTicketsEntrega(entre,atendE);
-                break;
-            case 4:
-                fflush(stdin);
-                tipo=tipoDeTick();
-                if(tipo==1){
-                    fflush(stdin);
-                    listarTicketReparcao(repar,atendR);
-                }
-                if(tipo==2){
-                    fflush(stdin);
-                    listarTicketEntrega(entre,atendE);
-                }
-                break;
-            case 5://sdasdasdas
-                
-                valorMedio(entre,atendE);
-//                printf("Valor médio das entregas  :  %02f EUR",media);
-                break;
-            case 6:
-                total=valorTotal(entre,atendE);
-                printf("Valor total das entregas  :  %02d EUR",total);
-                break;
-            case 7://boom
-                
-                mediaEspera(entre,repar,atendR,atendE);
-                
-                break;
-            case 0:
-                printf("\n\n        A sair...");
-                exit(0);
-                break;
-            default:
-                printf("Inserir escolha valida !\n\n\n\n");
-                break;
-            }
+        }
+        else
+            ch=100;
+        
     }while (ch!=0);
-
     return 0;
 }
     
