@@ -2,7 +2,6 @@
 #include<stdlib.h>
 #include<string.h>
 #include<time.h>
-#include<ctype.h>
 #define max 30
 
 typedef struct tm tm;
@@ -441,9 +440,14 @@ void ticketsAtendPorData(entrega entre[],reparacao repar[],int nE,int nR){
     }
     int mesreal=mes+1;
     int anoreal=ano+1900;
+    
     total=totalR+totalE;
-    printf("\n\nTickets atendidos no dia %d/%d/%d ->>> %d\n",dia,mesreal,anoreal,total);
-    printf("Numero de Tickets Entrega-> %d\nNumero de Tickets Reparacaoo-> %d\n\n",totalE,totalR);
+    if(total>0){
+        printf("\n\nTickets atendidos no dia %d/%d/%d ->>> %d\n",dia,mesreal,anoreal,total);
+        printf("Numero de Tickets Entrega-> %d\nNumero de Tickets Reparacaoo-> %d\n\n",totalE,totalR);
+    }
+    else
+        printf("\n\n  Nenhum Ticket Atendido na Data indicada\n\n ");
 }                        
                                                                
 void valorMedio(entrega entre[], int n){//valor medio das entregas
@@ -510,6 +514,44 @@ void mediaEspera(entrega entre[],reparacao repar[], int nR,int nE){//MEDIA DE ES
         }
 }
     
+void mediaEsperaPorData(entrega entre[],reparacao repar[], int nR,int nE){//MEDIA DE ESPERA
+    int i;
+    int dia=0,mes=0,ano=0;
+    int totalR=0,totalE=0;
+    float sec=0,totalSoma;
+    
+    procurarData(&dia,&mes,&ano);
+    for(i=0;i<nR;i++){
+        if(repar[i].atendimento.tm_mday==dia && repar[i].atendimento.tm_mon==mes && repar[i].atendimento.tm_year==ano)
+            totalR+=repar[i].espera;
+        
+    }
+    for(i=0;i<nE;i++){
+        if(entre[i].atendimento.tm_mday==dia && entre[i].atendimento.tm_mon==mes && entre[i].atendimento.tm_year==ano)       
+            totalE+=entre[i].espera;
+        
+    }
+        
+        int nSoma = nE + nR;
+        totalSoma = totalE + totalR;
+
+
+        if(totalSoma>0){
+            sec=(totalSoma/nSoma);
+            int h,m,s;
+                h=(sec/3600);
+                m=(sec-(3600*h))/60;
+                s=(sec-(3600*h)-(m*60));
+                
+                
+                printf("\nTempo medio de espera  : %02dH:%02dM:%02dS\n\n", h,m,s);
+        }
+        
+        else{
+            printf("\n Nenhum Ticket Atendido na Data indicada\n\n");
+        }
+}
+    
 void produtividadeBalcao(reparacao repar[],entrega entre[], int nR,int nE){
     int i=0;
     int countb1=0,countb2=0,countb3=0,countb4=0;
@@ -563,8 +605,9 @@ void subMenu(reparacao repar[],entrega entre[],int atendE,int atendR){
         printf("\n==================================");
         printf("\n »Tickets por Data(1)");
         printf("\n »Produtividade dos Balcoes(2)");
-        printf("\n »Valor Total entregue por Data(3)");
-        printf("\n »Tickets atendidos por Data(4)");
+        printf("\n »Valor Total Entregue por Data(3)");
+        printf("\n »Tickets Atendidos por Data(4)");
+        printf("\n »Media de Espera por Data(5)");
         printf("\n »Sair(0) \n");
         printf("Escolha\n->");
         scanf(" %c",&character);
@@ -586,6 +629,9 @@ void subMenu(reparacao repar[],entrega entre[],int atendE,int atendR){
                     case 4://boom
                          ticketsAtendPorData(entre,repar,atendE,atendR);
                         break;
+                    case 5://boom
+                         mediaEsperaPorData(entre,repar,atendR,atendE);
+                        break;
                     
                     case 0:
                         printf("Fim do Sub Menu");
@@ -604,7 +650,7 @@ void subMenu(reparacao repar[],entrega entre[],int atendE,int atendR){
 void menu(){
     printf("\n==================================");
     printf("\n");
-    printf("  \n     Sistema de atendimento ");
+    printf("  \n     SISTEMA DE ATENDIMENTO  ");
     printf("\n");
     printf("\n==================================");
 
